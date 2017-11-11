@@ -1,5 +1,4 @@
 #include"read_elf.h"
-#include <QDebug>
 
 FILE *elf=NULL;
 Elf64_Ehdr elf64_hdr;
@@ -27,16 +26,14 @@ unsigned int Index=0;
 long long stradr=0;
 long long shstradr=0;
 
-char *FILENAME;
+char FILENAME[20];
 
 bool open_file()
 {
-    /*
+    
     printf("Please input the file name:");
-    scanf("%s", FILENAME);
-    strcpy(FILENAME,"fact");
-    */
-    qDebug()<<FILENAME<<endl;
+    cin >> FILENAME;
+    cout<<FILENAME<<endl;
 
     file=fopen(FILENAME,"r");
     elf=fopen("elf.txt","w");
@@ -44,14 +41,14 @@ bool open_file()
     return true;
 }
 
-void read_elf()
+bool read_elf()
 {
     bsize=0;
     csize=0;
     dsize=0;
     if(!open_file()){
-        qDebug()<<"file error";
-        return ;
+        cout<<"file error" << endl;
+        return false;
     }
 
     fprintf(elf,"ELF Header:\n");
@@ -67,6 +64,7 @@ void read_elf()
     read_symtable();
 
     fclose(elf);
+    return true;
 }
 
 void read_Elf_header()

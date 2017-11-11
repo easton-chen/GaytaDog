@@ -3,7 +3,7 @@ using namespace std;
 
 extern FILE *file;
 
-extern void read_elf();
+extern bool read_elf();
 extern unsigned long long cadr; //代码段在解释文件中的偏移地址
 extern unsigned long long csize; //代码段的长度
 extern unsigned long long vcadr; //代码段在内存中的虚拟地址
@@ -22,6 +22,11 @@ extern unsigned long long endPC; //程序结束时的PC
 
 //程序运行的指令数
 long long inst_num=0;
+long long cycle_num=0;
+
+//div flag
+bool div_flag = false;
+bool rem_flag = false;
 
 //#define DEBUG
 #ifdef DEBUG
@@ -93,7 +98,10 @@ void load_memory()
 void load()
 {
     //解析elf文件
-    read_elf();
+    if(!read_elf())
+    {
+        return;
+    }
 
     //加载到内存
     load_memory();
@@ -108,6 +116,20 @@ void load()
     reg[3]=gp;
 }
 
+int main()
+{
+    inst_num=0;
+    cycle_num=0;
+    div_flag = false;
+    rem_flag = false;
+    load();
+    simulate(0);
+    cout << "simulation over!" << endl;
+    cout << "instruction num:" << inst_num << endl;
+    cout << "cycle num:" << cycle_num << endl;
+    cout << "CPI:" << (double)cycle_num/(double)inst_num << endl;
+
+}
 //simulation.cpp的主函数,if_debug表示是否为单步调试模式
 void simulate(int if_debug)
 {
@@ -121,7 +143,6 @@ void simulate(int if_debug)
 #endif
 
         IF();
-        if(PC==0x101c4&&((reg[14]>>63)&1==1)) break;
         ID();
         EX();
         MEM();
@@ -758,144 +779,193 @@ void EX()
     switch(ALUop){
         case 1:
             ALUout=Rs+Rt;
+            cycle_num+=4;
             break;
         case 2:
-            ALUout=(Rs*Rt)&0xffffffffffffffff;
+            ALUout=Rs*Rt;
+            cycle_num+=5;
             break;
         case 3:
             ALUout=Rs-Rt;
+            cycle_num+=4;
             break;
         case 4:
             ALUout=Rs<<Rt;
+            cycle_num+=4;
             break;
         case 5:
             ALUout=mulh(Rs,Rt);
+            cycle_num+=5;
             break;
         case 6:
             if(Rs<Rt) ALUout=1;
             else ALUout=0;
+            cycle_num+=4;
             break;
         case 7:
             ALUout=Rs^Rt;
+            cycle_num+=4;
             break;
         case 8:
             ALUout=Rs/Rt;
+            if(rem_flag) cycle_num+=3;
+            else cycle_num+=43;
             break;
         case 9:
             ALUout=(unsigned long long)Rs>>Rt;
+            cycle_num+=4;
             break;
         case 10:
             ALUout=Rs|Rt;
+            cycle_num+=4;
             break;
         case 11:
             ALUout=Rs%Rt;
+            if(div_flag) cycle_num+=3;
+            else cycle_num+=43;
             break;
         case 12:
             ALUout=Rs&Rt;
+            cycle_num+=4;
             break;
         case 13:
             ALUout=Rs+Imm;
+            cycle_num+=5;
             break;
         case 14:
             ALUout=Rs+Imm;
+            cycle_num+=5;
             break;
         case 15:
             ALUout=Rs+Imm;
+            cycle_num+=5;
             break;
         case 16:
             ALUout=Rs+Imm;
+            cycle_num+=5;
             break;
         case 17:
             ALUout=Rs+Imm;
+            cycle_num+=4;
             break;
         case 18:
             ALUout=Rs<<Imm;
+            cycle_num+=4;
             break;
         case 19:
             if(Rs<Imm)ALUout=1;
             else ALUout=0;
+            cycle_num+=4;
             break;
         case 20:
             ALUout=Rs^Imm;
+            cycle_num+=4;
             break;
         case 21:
             ALUout=(unsigned long long)Rs>>Imm;
+            cycle_num+=4;
             break;
         case 22:
             ALUout=Rs|Imm;
+            cycle_num+=4;
             break;
         case 23:
             ALUout=Rs&Imm;
+            cycle_num+=4;
             break;
         case 24:
             ALUout=ext_signed((Rs + Imm)&0xffffffff,1,32);
+            cycle_num+=4;
             break;
         case 25:
             ALUout=temp_PC+4;
             PC=Rs+Imm;
+            cycle_num+=4;
             break;
         case 26:
             dbg_printf("System call\n");
             break;
         case 27:
             ALUout=Rs+Imm;
+            cycle_num+=4;
             break;
         case 28:
             ALUout=Rs+Imm;
+            cycle_num+=4;
             break;
         case 29:
             ALUout=Rs+Imm;
+            cycle_num+=4;
             break;
         case 30:
             ALUout=Rs+Imm;
+            cycle_num+=4;
             break;
         case 31:
             if(Rs==Rt) PC=temp_PC+Imm;
+            cycle_num+=3;
             break;
         case 32:
             if((long long)Rs!=(long long)Rt) PC=temp_PC+Imm;
+            cycle_num+=3;
             break;
         case 33:
             if((long long)Rs<(long long)Rt) PC=temp_PC+Imm;
+            cycle_num+=3;
             break;
         case 34:
             if((long long)Rs>=(long long)Rt) PC=temp_PC+Imm;
+            cycle_num+=3;
             break;
         case 35:
             ALUout=temp_PC+Imm;
+            cycle_num+=4;
             break;
         case 36:
             ALUout=Imm;
+            cycle_num+=4;
             break;
         case 37:
             ALUout=temp_PC+4;
             PC=temp_PC+Imm;
+            cycle_num+=4;
             break;
         case 38://sra
             ALUout=Rs>>Rt;
+            cycle_num+=4;
             break;
         case 39://srai
             ALUout=Rs>>Imm;
+            cycle_num+=4;
             break;
         case 40://mulw
             ALUout=ext_signed((Rs*Rt)&0xffffffff,1,32);
+            cycle_num+=4;
             break;
         case 41://slliw
             ALUout=ext_signed((Rs<<Imm)&0xffffffff,0,32);
+            cycle_num+=4;
             break;
         case 42://srliw
             ALUout=ext_signed(((unsigned long long)Rs>>Imm)&0xffffffff,0,32);
+            cycle_num+=4;
             break;
         case 43://sraiw
             ALUout=ext_signed((Rs>>Imm)&0xffffffff,0,32);
+            cycle_num+=4;
             break;
         case 44://addw
             ALUout=ext_signed((Rs+Rt)&0xffffffff,0,32);
+            cycle_num+=4;
             break;
         default:
             dbg_printf("Invalid instruction\n");
             break;
     }
+
+    if(ALUop == 8) div_flag = true;
+    else if(ALUop == 11) rem_flag = true;
+    else div_flag = rem_flag = false;
 
     //choose reg dst address
     int Reg_Dst;

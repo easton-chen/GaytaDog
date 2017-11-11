@@ -1,5 +1,3 @@
-#ifndef REG_DEF_H
-#define REG_DEF_H
 typedef unsigned long long REG;
 
 struct IFID{
@@ -101,4 +99,3 @@ void print_MEMWB()
     printf("Ctrl_WB_RegWrite = %x\n",MEM_WB.Ctrl_WB_RegWrite);
     printf("Ctrl_WB_MemtoReg = %x\n",MEM_WB.Ctrl_WB_MemtoReg);
 }
-#endif // REG_DEF_H

@@ -1,5 +1,3 @@
-#ifndef SIMULATION_H
-#define SIMULATION_H
 #include<iostream>
 #include<stdio.h>
 #include<math.h>
@@ -272,4 +270,3 @@ void print_memory(long long addr, int cnt, int size)
             break;
     }
 }
-#endif // SIMULATION_H
