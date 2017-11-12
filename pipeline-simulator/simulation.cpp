@@ -131,6 +131,7 @@ int main()
     long long addr;
     int cnt;
     int size;
+    printf("please input the addr, cnt and size:\n");
     scanf("%llx%d%d",&addr,&cnt,&size);
     print_memory(addr,cnt,size);
     cout << "simulation over!" << endl;
@@ -151,7 +152,6 @@ void simulate(int if_debug)
             dbg_printf( "instruction num: %d\n",inst_num);
         }
 #endif
-        printf( "instruction num: %d\n",inst_num);
         IF();
         ID();
         EX();
@@ -238,7 +238,6 @@ void IF()
                 stall_flag[0]=1;
                 bubble_flag[1]=1;
                 inst_num--;
-                printf("here!!!!!\n");
                 dbg_printf("data risk!\n");
             }
         }
@@ -1208,7 +1207,7 @@ void WB()
 
     if(MEM_WB.PC != 0)
     {
-        printf( "PC:%llx\n",MEM_WB.PC);
+        //printf( "PC:%llx\n",MEM_WB.PC);
         //print_REG();
     }
 }
