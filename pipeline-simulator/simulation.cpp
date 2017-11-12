@@ -920,7 +920,7 @@ void EX()
             break;
         case 25:
             ALUout=temp_PC+4;
-            PC=Rs+Imm;
+            //PC=Rs+Imm;
             break;
         case 26:
             dbg_printf("System call\n");
@@ -938,16 +938,36 @@ void EX()
             ALUout=Rs+Imm;
             break;
         case 31:
-            if(Rs==Rt) PC=temp_PC+Imm;
+            //if(Rs==Rt) PC=temp_PC+Imm;
+            if((long long)Rs!=(long long)Rt) 
+            {
+                bubble_flag[1]=bubble_flag[2]=1;
+                PC=ID_EX.val_P;
+            }
             break;
         case 32:
-            if((long long)Rs!=(long long)Rt) PC=temp_PC+Imm;
+            //if((long long)Rs!=(long long)Rt) PC=temp_PC+Imm;
+            if((long long)Rs==(long long)Rt)
+            {
+                bubble_flag[1]=bubble_flag[2]=1;
+                PC=ID_EX.val_P;
+            }
             break;
         case 33:
-            if((long long)Rs<(long long)Rt) PC=temp_PC+Imm;
+            //if((long long)Rs<(long long)Rt) PC=temp_PC+Imm;
+            if((long long)Rs>=(long long)Rt)
+            {
+                bubble_flag[1]=bubble_flag[2]=1;
+                PC=ID_EX.val_P;
+            }
             break;
         case 34:
-            if((long long)Rs>=(long long)Rt) PC=temp_PC+Imm;
+            //if((long long)Rs>=(long long)Rt) PC=temp_PC+Imm;
+            if((long long)Rs<(long long)Rt)
+            {
+                bubble_flag[1]=bubble_flag[2]=1;
+                PC=ID_EX.val_P;
+            }
             break;
         case 35:
             ALUout=temp_PC+Imm;
@@ -957,7 +977,7 @@ void EX()
             break;
         case 37:
             ALUout=temp_PC+4;
-            PC=temp_PC+Imm;
+            //PC=temp_PC+Imm;
             break;
         case 38://sra
             ALUout=Rs>>Rt;
