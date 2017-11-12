@@ -124,11 +124,11 @@ int main()
     rem_flag = false;
     load();
     simulate(0);
-    cout << "simulation over!" << endl;
-    cout << "instruction num:" << inst_num << endl;
-    cout << "cycle num:" << cycle_num << endl;
-    cout << "CPI:" << (double)cycle_num/(double)inst_num << endl;
-
+    double CPI = (double)cycle_num/(double)inst_num;
+    dbg_printf("simulation finished\n");
+    dbg_printf("instruction num: %d\n", inst_num);
+    dbg_printf("cycle num: %d\n", cycle_num);
+    dbg_printf("CPI: %lf\n", CPI);
 }
 //simulation.cpp的主函数,if_debug表示是否为单步调试模式
 void simulate(int if_debug)

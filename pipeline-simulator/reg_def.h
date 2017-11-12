@@ -16,7 +16,7 @@ struct IDEX{
     int Rd,Rt;
     long long PC;
     long long val_P;
-    long long Imm;
+    long long Imm;int Reg_dst;
     REG Reg_Rs,Reg_Rt;
 
     char Ctrl_EX_ALUSrc;

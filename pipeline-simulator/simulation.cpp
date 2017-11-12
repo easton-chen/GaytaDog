@@ -24,11 +24,12 @@ extern unsigned long long endPC; //程序结束时的PC
 long long inst_num=0;
 long long cycle_num=0;
 
-//div flag
+//mul-div flag
+bool mul_flag = false;
 bool div_flag = false;
 bool rem_flag = false;
 
-//#define DEBUG
+#define DEBUG
 #ifdef DEBUG
 # define dbg_printf(...) printf(__VA_ARGS__)
 #else
@@ -120,8 +121,9 @@ int main()
 {
     inst_num=0;
     cycle_num=0;
-    div_flag = false;
-    rem_flag = false;
+    mul_flag=false;
+    div_flag=false;
+    rem_flag=false;
     load();
     simulate(0);
     cout << "simulation over!" << endl;
@@ -130,6 +132,7 @@ int main()
     cout << "CPI:" << (double)cycle_num/(double)inst_num << endl;
 
 }
+
 //simulation.cpp的主函数,if_debug表示是否为单步调试模式
 void simulate(int if_debug)
 {
@@ -170,7 +173,6 @@ void simulate(int if_debug)
     if(PC==endPC)
         cout<<"Simulation finished"<<endl;
 }
-
 
 //取指
 void IF()
@@ -237,7 +239,7 @@ void IF()
     }
     else if(OP==OP_JAL)//0x6f
     {
-        Imm=ext_signed(((getbit(inst,0,0)<<20) + (getbit(inst,12,19)<<12) + (getbit(inst,11,11)<<11) + (getbit(inst,1,10)<<1)),1,21);
+        Imm=ext_signed(((getbit(Inst,0,0)<<20) + (getbit(Inst,12,19)<<12) + (getbit(Inst,11,11)<<11) + (getbit(Inst,1,10)<<1)),1,21);
         PC=PC+Imm;
     }
     else
@@ -720,13 +722,13 @@ void ID()
             }
     }
     //check for the data risk
-    if(ID_EX.Ctrl_WB_RegWrite==1 && (rs==ID_EX.Ctrl_EX_RegDst||rt==ID_EX.Ctrl_EX_RegDst))
+    if(ID_EX.Ctrl_WB_RegWrite==1 && (rs==ID_EX.Reg_dst||rt==ID_EX.Reg_dst))
     {
         stall_flag[0]=1;
         stall_flag[1]=1;
         bubble_flag[2]=1;
     }
-    else if(EX_MEM.Ctrl_WB_RegWrite==1 && (rs==EX_MEM.Reg_dst||rt==EX_MEM.Ctrl_EX_Reg_dst))
+    else if(EX_MEM.Ctrl_WB_RegWrite==1 && (rs==EX_MEM.Reg_dst||rt==EX_MEM.Reg_dst))
     {
         stall_flag[0]=1;
         stall_flag[1]=1;
@@ -738,11 +740,22 @@ void ID()
         stall_flag[1]=1;
         bubble_flag[2]=1;
     }
+    //choose reg dst address                                       
+    int Reg_Dst;
+    if(RegDst)
+    {
+        Reg_Dst=rd;
+    }
+    else
+    {
+        Reg_Dst=rt;
+    }
 
 
     //write ID_EX_old
     ID_EX_old.Rd=rd;
     ID_EX_old.Rt=rt;
+    ID_EX_old.Reg_dst=Reg_Dst;
     ID_EX_old.Reg_Rs=reg[rs];
     ID_EX_old.Reg_Rt=reg[rt];
 
@@ -839,7 +852,6 @@ void EX()
     char ALUop=ID_EX.Ctrl_EX_ALUOp;
     char RegDst=ID_EX.Ctrl_EX_RegDst;
 
-    //alu calculate
     int Zero;
     
     switch(ALUop){
@@ -848,6 +860,7 @@ void EX()
             break;
         case 2:
             ALUout=Rs*Rt;
+            if(!mul_flag) cycle_num+=1;
             break;
         case 3:
             ALUout=Rs-Rt;
@@ -857,6 +870,7 @@ void EX()
             break;
         case 5:
             ALUout=mulh(Rs,Rt);
+            if(!mul_flag) cycle_num+=1;
             break;
         case 6:
             if(Rs<Rt) ALUout=1;
@@ -867,7 +881,7 @@ void EX()
             break;
         case 8:
             ALUout=Rs/Rt;
-
+            if(!rem_flag) cycle_num+=39;
             break;
         case 9:
             ALUout=(unsigned long long)Rs>>Rt;
@@ -877,7 +891,7 @@ void EX()
             break;
         case 11:
             ALUout=Rs%Rt;
-
+            if(!div_flag) cycle_num+=39;
             break;
         case 12:
             ALUout=Rs&Rt;
@@ -1009,7 +1023,9 @@ void EX()
     if(ALUop == 8) div_flag = true;
     else if(ALUop == 11) rem_flag = true;
     else div_flag = rem_flag = false;
-
+    if(ALUop==2||ALUop==5) mul_flag = true;
+    else mul_flag = false;
+/*
     //choose reg dst address
     int Reg_Dst;
     if(RegDst)
@@ -1020,10 +1036,10 @@ void EX()
     {
         Reg_Dst=rt;
     }
-
+*/
     //write EX_MEM_old
     EX_MEM_old.PC=temp_PC;
-    EX_MEM_old.Reg_dst=Reg_Dst;
+    EX_MEM_old.Reg_dst=ID_EX.Reg_dst;
     EX_MEM_old.ALU_out=ALUout;
     EX_MEM_old.Reg_Rt=Rt;
 
