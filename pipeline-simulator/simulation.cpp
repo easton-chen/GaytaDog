@@ -136,7 +136,7 @@ int main()
 //simulation.cpp的主函数,if_debug表示是否为单步调试模式
 void simulate(int if_debug)
 {
-    while(PC!=endPC)
+    while(PC!=endPC && inst_num<=20)
     {
 #ifdef DEBUG
         {
@@ -157,6 +157,7 @@ void simulate(int if_debug)
         //EX_MEM=EX_MEM_old;
         //MEM_WB=MEM_WB_old;
         update_latch();
+        
         reg[0]=0;//一直为零
 
         //update cycle number
@@ -727,18 +728,21 @@ void ID()
         stall_flag[0]=1;
         stall_flag[1]=1;
         bubble_flag[2]=1;
+        dbg_printf("data risk!\n");
     }
     else if(EX_MEM.Ctrl_WB_RegWrite==1 && (rs==EX_MEM.Reg_dst||rt==EX_MEM.Reg_dst))
     {
         stall_flag[0]=1;
         stall_flag[1]=1;
         bubble_flag[2]=1;
+        dbg_printf("data risk!\n");
     }
     else if(MEM_WB.Ctrl_WB_RegWrite==1 && (rs==MEM_WB.Reg_dst||rt==MEM_WB.Reg_dst))
     {
         stall_flag[0]=1;
         stall_flag[1]=1;
         bubble_flag[2]=1;
+        dbg_printf("data risk!\n");
     }
     //choose reg dst address                                       
     int Reg_Dst;

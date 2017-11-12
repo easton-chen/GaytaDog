@@ -277,6 +277,11 @@ void print_memory(long long addr, int cnt, int size)
 
 void update_latch()
 {
+    for(int i=0;i<5;i++)
+    {
+        printf( "stall_flag[%d]=%d  ",i,stall_flag[i]);
+        printf( "bubble_flag[%d]=%d\n",i,bubble_flag[i]);
+    }
     // restore PC
     if(stall_flag[0]==1)
         PC=IF_ID_old.PC;
