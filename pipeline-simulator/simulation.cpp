@@ -183,19 +183,63 @@ void IF()
 
     //write IF_ID_old
     //IF_ID_old.inst=memory[PC];
-
-    memcpy(&IF_ID.inst,memory+PC,4);
-    Inst=IF_ID.inst;
-    IF_ID.PC=PC;
+    memcpy(&IF_ID_old.inst,memory+PC,4);
+    Inst=IF_ID_old.inst;
+    IF_ID_old.PC=PC;
+    IF_ID_old.val_P=PC+4;
 
 #ifdef DEBUG
     {
-        dbg_printf( "instruction:%08x\n",IF_ID.inst);
+        dbg_printf( "instruction:%08x\n",IF_ID_old.inst);
         dbg_printf( "IF finished\n");
         print_IFID();
     }
 #endif
+    unsigned int OP=getbit(Inst,25,31);
+    long long Imm;
+    unsigned int rs=0;
+    unsigned int fuc3=0;
+    if(OP==OP_JALR)//0x67
+    {
+        rs=getbit(Inst,12,16);
+        fuc3=getbit(Inst,17,19);
+        if(fuc3==0x00)
+        {
+            Imm=ext_signed(getbit(Inst,0,11),1,12);
+            PC=reg[rs]+Imm;//PredictPC
+        }
+        else dbg_printf("Invalid instruction\n");
+    }
+    else if(OP==OP_BEQ)//0x63
+    {
+        Imm=ext_signed(((getbit(Inst,0,0)<<12) + (getbit(Inst,24,24)<<11) + (getbit(Inst,1,6)<<5) + (getbit(Inst,20,23)<<1)),1,13);
+        fuc3=getbit(Inst,17,19);
 
+        switch(fuc3)
+        {
+            case 0:
+                PC=PC+Imm;//if(R[rs1] == R[rs2]) PC ← PC + {offset, 1b'0}
+                break;
+            case 1:
+                PC=PC+Imm;//if(R[rs1] != R[rs2]) PC ← PC + {offset, 1b'0}
+                break;
+            case 4:
+                PC=PC+Imm;//if(R[rs1] < R[rs2]) PC ← PC + {offset, 1b'0}
+                break;
+            case 5:
+                PC=PC+Imm;//if(R[rs1] >= R[rs2]) PC ← PC + {offset, 1b'0}
+                break;
+            default:
+                dbg_printf("Invalid instruction\n");
+                break;
+        }
+    }
+    else if(OP==OP_JAL)//0x6f
+    {
+        Imm=ext_signed(((getbit(inst,0,0)<<20) + (getbit(inst,12,19)<<12) + (getbit(inst,11,11)<<11) + (getbit(inst,1,10)<<1)),1,21);
+        PC=PC+Imm;
+    }
+    else
     PC=PC+4;
 }
 

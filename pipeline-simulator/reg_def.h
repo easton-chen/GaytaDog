@@ -3,6 +3,7 @@ typedef unsigned long long REG;
 struct IFID{
     unsigned int inst;
     long long PC;
+    long long val_P;
 }IF_ID,IF_ID_old;
 
 void print_IFID()
@@ -14,6 +15,7 @@ void print_IFID()
 struct IDEX{
     int Rd,Rt;
     long long PC;
+    long long val_P;
     long long Imm;
     REG Reg_Rs,Reg_Rt;
 
@@ -50,6 +52,7 @@ void print_IDEX()
 
 struct EXMEM{
     long long PC;
+    long long val_P;
     int Reg_dst;
     REG ALU_out;
     int Zero;
@@ -82,6 +85,7 @@ void print_EXMEM()
 }
 
 struct MEMWB{
+    long long val_P;
     unsigned int Mem_read;
     REG ALU_out;
     int Reg_dst;
