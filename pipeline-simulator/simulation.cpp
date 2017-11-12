@@ -155,7 +155,8 @@ void simulate(int if_debug)
         //MEM_WB=MEM_WB_old;
         reg[0]=0;//一直为零
 
-        inst_num++;
+        //update cycle number
+        cycle_num++;
 #ifdef DEBUG
         {
         print_REG();
@@ -673,28 +674,48 @@ void ID()
                     break;
             }
     }
+    //check for the data risk
+    if(ID_EX.Ctrl_WB_RegWrite==1 && (rs==ID_EX.Ctrl_EX_RegDst||rt==ID_EX.Ctrl_EX_RegDst))
+    {
+        stall_flag[0]=1;
+        stall_flag[1]=1;
+        bubble_flag[2]=1;
+    }
+    else if(EX_MEM.Ctrl_WB_RegWrite==1 && (rs==EX_MEM.Reg_dst||rt==EX_MEM.Ctrl_EX_Reg_dst))
+    {
+        stall_flag[0]=1;
+        stall_flag[1]=1;
+        bubble_flag[2]=1;
+    }
+    else if(MEM_WB.Ctrl_WB_RegWrite==1 && (rs==MEM_WB.Reg_dst||rt==MEM_WB.Reg_dst))
+    {
+        stall_flag[0]=1;
+        stall_flag[1]=1;
+        bubble_flag[2]=1;
+    }
+
 
     //write ID_EX_old
-    ID_EX.Rd=rd;
-    ID_EX.Rt=rt;
-    ID_EX.Reg_Rs=reg[rs];
-    ID_EX.Reg_Rt=reg[rt];
+    ID_EX_old.Rd=rd;
+    ID_EX_old.Rt=rt;
+    ID_EX_old.Reg_Rs=reg[rs];
+    ID_EX_old.Reg_Rt=reg[rt];
 
-    ID_EX.PC=IF_ID.PC;
+    ID_EX_old.PC=IF_ID.PC;
     dbg_printf( "EXTop = %d\n",EXTop);
     dbg_printf( "Imm_length = %d\n",Imm_length);
-    ID_EX.Imm=ext_signed(Imm,EXTop,Imm_length);
+    ID_EX_old.Imm=ext_signed(Imm,EXTop,Imm_length);
 
-    ID_EX.Ctrl_EX_ALUSrc=ALUSrc;
-    ID_EX.Ctrl_EX_ALUOp=ALUop;
-    ID_EX.Ctrl_EX_RegDst=RegDst;
+    ID_EX_old.Ctrl_EX_ALUSrc=ALUSrc;
+    ID_EX_old.Ctrl_EX_ALUOp=ALUop;
+    ID_EX_old.Ctrl_EX_RegDst=RegDst;
 
-    ID_EX.Ctrl_M_Branch=Branch;
-    ID_EX.Ctrl_M_MemWrite=MemWrite;
-    ID_EX.Ctrl_M_MemRead=MemRead;
+    ID_EX_old.Ctrl_M_Branch=Branch;
+    ID_EX_old.Ctrl_M_MemWrite=MemWrite;
+    ID_EX_old.Ctrl_M_MemRead=MemRead;
 
-    ID_EX.Ctrl_WB_RegWrite=RegWrite;
-    ID_EX.Ctrl_WB_MemtoReg=MemtoReg;
+    ID_EX_old.Ctrl_WB_RegWrite=RegWrite;
+    ID_EX_old.Ctrl_WB_MemtoReg=MemtoReg;
 
 #ifdef DEBUG
 {
@@ -779,184 +800,141 @@ void EX()
     switch(ALUop){
         case 1:
             ALUout=Rs+Rt;
-            cycle_num+=4;
             break;
         case 2:
             ALUout=Rs*Rt;
-            cycle_num+=5;
             break;
         case 3:
             ALUout=Rs-Rt;
-            cycle_num+=4;
             break;
         case 4:
             ALUout=Rs<<Rt;
-            cycle_num+=4;
             break;
         case 5:
             ALUout=mulh(Rs,Rt);
-            cycle_num+=5;
             break;
         case 6:
             if(Rs<Rt) ALUout=1;
             else ALUout=0;
-            cycle_num+=4;
             break;
         case 7:
             ALUout=Rs^Rt;
-            cycle_num+=4;
             break;
         case 8:
             ALUout=Rs/Rt;
-            if(rem_flag) cycle_num+=3;
-            else cycle_num+=43;
+
             break;
         case 9:
             ALUout=(unsigned long long)Rs>>Rt;
-            cycle_num+=4;
             break;
         case 10:
             ALUout=Rs|Rt;
-            cycle_num+=4;
             break;
         case 11:
             ALUout=Rs%Rt;
-            if(div_flag) cycle_num+=3;
-            else cycle_num+=43;
+
             break;
         case 12:
             ALUout=Rs&Rt;
-            cycle_num+=4;
             break;
         case 13:
-            ALUout=Rs+Imm;
-            cycle_num+=5;
+            ALUout=Rs+Imm;  
             break;
         case 14:
             ALUout=Rs+Imm;
-            cycle_num+=5;
             break;
         case 15:
             ALUout=Rs+Imm;
-            cycle_num+=5;
             break;
         case 16:
             ALUout=Rs+Imm;
-            cycle_num+=5;
             break;
         case 17:
             ALUout=Rs+Imm;
-            cycle_num+=4;
             break;
         case 18:
             ALUout=Rs<<Imm;
-            cycle_num+=4;
             break;
         case 19:
             if(Rs<Imm)ALUout=1;
             else ALUout=0;
-            cycle_num+=4;
             break;
         case 20:
             ALUout=Rs^Imm;
-            cycle_num+=4;
             break;
         case 21:
             ALUout=(unsigned long long)Rs>>Imm;
-            cycle_num+=4;
             break;
         case 22:
             ALUout=Rs|Imm;
-            cycle_num+=4;
             break;
         case 23:
             ALUout=Rs&Imm;
-            cycle_num+=4;
             break;
         case 24:
             ALUout=ext_signed((Rs + Imm)&0xffffffff,1,32);
-            cycle_num+=4;
             break;
         case 25:
             ALUout=temp_PC+4;
             PC=Rs+Imm;
-            cycle_num+=4;
             break;
         case 26:
             dbg_printf("System call\n");
             break;
         case 27:
             ALUout=Rs+Imm;
-            cycle_num+=4;
             break;
         case 28:
             ALUout=Rs+Imm;
-            cycle_num+=4;
             break;
         case 29:
             ALUout=Rs+Imm;
-            cycle_num+=4;
             break;
         case 30:
             ALUout=Rs+Imm;
-            cycle_num+=4;
             break;
         case 31:
             if(Rs==Rt) PC=temp_PC+Imm;
-            cycle_num+=3;
             break;
         case 32:
             if((long long)Rs!=(long long)Rt) PC=temp_PC+Imm;
-            cycle_num+=3;
             break;
         case 33:
             if((long long)Rs<(long long)Rt) PC=temp_PC+Imm;
-            cycle_num+=3;
             break;
         case 34:
             if((long long)Rs>=(long long)Rt) PC=temp_PC+Imm;
-            cycle_num+=3;
             break;
         case 35:
             ALUout=temp_PC+Imm;
-            cycle_num+=4;
             break;
         case 36:
             ALUout=Imm;
-            cycle_num+=4;
             break;
         case 37:
             ALUout=temp_PC+4;
             PC=temp_PC+Imm;
-            cycle_num+=4;
             break;
         case 38://sra
             ALUout=Rs>>Rt;
-            cycle_num+=4;
             break;
         case 39://srai
             ALUout=Rs>>Imm;
-            cycle_num+=4;
             break;
         case 40://mulw
             ALUout=ext_signed((Rs*Rt)&0xffffffff,1,32);
-            cycle_num+=4;
             break;
         case 41://slliw
             ALUout=ext_signed((Rs<<Imm)&0xffffffff,0,32);
-            cycle_num+=4;
             break;
         case 42://srliw
             ALUout=ext_signed(((unsigned long long)Rs>>Imm)&0xffffffff,0,32);
-            cycle_num+=4;
             break;
         case 43://sraiw
             ALUout=ext_signed((Rs>>Imm)&0xffffffff,0,32);
-            cycle_num+=4;
             break;
         case 44://addw
             ALUout=ext_signed((Rs+Rt)&0xffffffff,0,32);
-            cycle_num+=4;
             break;
         default:
             dbg_printf("Invalid instruction\n");
@@ -979,18 +957,18 @@ void EX()
     }
 
     //write EX_MEM_old
-    EX_MEM.PC=temp_PC;
-    EX_MEM.Reg_dst=Reg_Dst;
-    EX_MEM.ALU_out=ALUout;
-    EX_MEM.Reg_Rt=Rt;
+    EX_MEM_old.PC=temp_PC;
+    EX_MEM_old.Reg_dst=Reg_Dst;
+    EX_MEM_old.ALU_out=ALUout;
+    EX_MEM_old.Reg_Rt=Rt;
 
-    EX_MEM.Ctrl_EX_ALUOp=ALUop;
-    EX_MEM.Ctrl_M_Branch=ID_EX.Ctrl_M_Branch;
-    EX_MEM.Ctrl_M_MemWrite=ID_EX.Ctrl_M_MemWrite;
-    EX_MEM.Ctrl_M_MemRead=ID_EX.Ctrl_M_MemRead;
+    EX_MEM_old.Ctrl_EX_ALUOp=ALUop;
+    EX_MEM_old.Ctrl_M_Branch=ID_EX.Ctrl_M_Branch;
+    EX_MEM_old.Ctrl_M_MemWrite=ID_EX.Ctrl_M_MemWrite;
+    EX_MEM_old.Ctrl_M_MemRead=ID_EX.Ctrl_M_MemRead;
 
-    EX_MEM.Ctrl_WB_RegWrite=ID_EX.Ctrl_WB_RegWrite;
-    EX_MEM.Ctrl_WB_MemtoReg=ID_EX.Ctrl_WB_MemtoReg;
+    EX_MEM_old.Ctrl_WB_RegWrite=ID_EX.Ctrl_WB_RegWrite;
+    EX_MEM_old.Ctrl_WB_MemtoReg=ID_EX.Ctrl_WB_MemtoReg;
 #ifdef DEBUG
     {
         dbg_printf("EX finished\n");
@@ -1069,13 +1047,13 @@ void EX()
     }
     //write MEM_WB_old
     if(MemRead == 0)
-        MEM_WB.ALU_out=EX_MEM.ALU_out;
-    else MEM_WB.ALU_out=val;
-    MEM_WB.Mem_read=EX_MEM.Ctrl_M_MemRead;
-    MEM_WB.Reg_dst=EX_MEM.Reg_dst;
+        MEM_WB_old.ALU_out=EX_MEM.ALU_out;
+    else MEM_WB_old.ALU_out=val;
+    MEM_WB_old.Mem_read=EX_MEM.Ctrl_M_MemRead;
+    MEM_WB_old.Reg_dst=EX_MEM.Reg_dst;
 
-    MEM_WB.Ctrl_WB_MemtoReg=EX_MEM.Ctrl_WB_MemtoReg;
-    MEM_WB.Ctrl_WB_RegWrite=EX_MEM.Ctrl_WB_RegWrite;
+    MEM_WB_old.Ctrl_WB_MemtoReg=EX_MEM.Ctrl_WB_MemtoReg;
+    MEM_WB_old.Ctrl_WB_RegWrite=EX_MEM.Ctrl_WB_RegWrite;
 #ifdef DEBUG
     {
         dbg_printf("MEM finished\n");
@@ -1099,4 +1077,6 @@ void WB()
 
     if(Ctrl_WB_RegWrite==1) reg[Reg_dst]=ALU_out;
     dbg_printf("WB finished\n");
+    //instruction reaches WB then update inst_num
+    inst_num++;
 }

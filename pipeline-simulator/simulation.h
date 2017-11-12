@@ -61,6 +61,10 @@ unsigned int imm20=0;
 unsigned int imm7=0;
 unsigned int imm5=0;
 
+//stall and bubble flag
+int stall_flag[5];
+int bubble_flag[5];
+
 //加载内存
 void load_memory();
 
@@ -269,4 +273,38 @@ void print_memory(long long addr, int cnt, int size)
             printf("illegal size!\n");
             break;
     }
+}
+
+void update_latch()
+{
+    // restore PC
+    if(stall_flag[0]==1)
+        PC=IF_ID_old.val_P;
+    // update IF_ID
+    if(bubble_flag[1]==1)
+        memset(&IF_ID,0,sizeof(IF_ID));
+    else if(stall_flag[1]==0)
+        IF_ID=IF_ID_old;
+    
+    // update ID_EX
+    if(bubble_flag[2]==1)
+        memset(&ID_EX,0,sizeof(ID_EX));
+    else if(stall_flag[2]==0)
+        ID_EX=ID_EX_old;
+    
+    // update EX_MEM
+    if(bubble_flag[3]==1)
+        memset(&EX_MEM,0,sizeof(EX_MEM));
+    else if(stall_flag[3]==0)
+        EX_MEM=EX_MEM_old;
+    
+    // update MEM_WB
+    if(bubble_flag[4]==1)
+        memset(&MEM_WB,0,sizeof(MEM_WB));
+    else if(stall_flag[4]==0)
+        MEM_WB=MEM_WB_old;
+
+    //reset flag
+    memset(stall_flag,0,sizeof(int)*5);
+    memset(bubble_flag,0,sizeof(int)*5);
 }
