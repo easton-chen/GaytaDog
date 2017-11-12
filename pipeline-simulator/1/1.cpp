@@ -1,5 +1,7 @@
 #include<stdio.h>
 int a=0,b=1,c=2;
+//a=6,b=10,c=12
+//11778,11760,11764
 int main()
 {
 	a=a+2;
