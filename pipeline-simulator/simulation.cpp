@@ -153,6 +153,7 @@ void simulate(int if_debug)
         //ID_EX=ID_EX_old;
         //EX_MEM=EX_MEM_old;
         //MEM_WB=MEM_WB_old;
+        update_latch();
         reg[0]=0;//一直为零
 
         //update cycle number

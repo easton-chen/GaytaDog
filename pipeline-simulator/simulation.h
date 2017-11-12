@@ -279,7 +279,7 @@ void update_latch()
 {
     // restore PC
     if(stall_flag[0]==1)
-        PC=IF_ID_old.val_P;
+        PC=IF_ID_old.PC;
     // update IF_ID
     if(bubble_flag[1]==1)
         memset(&IF_ID,0,sizeof(IF_ID));
