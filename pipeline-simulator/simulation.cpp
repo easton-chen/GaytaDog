@@ -82,7 +82,9 @@ void load_memory()
 #endif
 
     entry = vcadr;
-    endPC=madr+msize-4;
+    endPC=madr+msize-3;
+    if(endPC%4!=0)
+        endPC-=1;
 
 #ifdef DEBUG
     {
