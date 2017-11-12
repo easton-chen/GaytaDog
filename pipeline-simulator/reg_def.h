@@ -16,7 +16,8 @@ struct IDEX{
     int Rd,Rt;
     long long PC;
     long long val_P;
-    long long Imm;int Reg_dst;
+    long long Imm;
+    int Reg_dst;
     REG Reg_Rs,Reg_Rt;
 
     char Ctrl_EX_ALUSrc;
@@ -38,6 +39,7 @@ void print_IDEX()
     printf("Rt = %08x\n", ID_EX_old.Rt);
     printf("PC = %llx\n", ID_EX_old.PC);
     printf("Imm = %llx\n", ID_EX_old.Imm);
+    printf("Reg_dst = %x\n", ID_EX_old.Reg_dst);
     printf("Reg_Rs = %llx\n", ID_EX_old.Reg_Rs);
     printf("Reg_Rt = %llx\n", ID_EX_old.Reg_Rt);
     printf("Ctrl_EX_ALUSrc = %x\n", ID_EX_old.Ctrl_EX_ALUSrc);
@@ -85,6 +87,7 @@ void print_EXMEM()
 }
 
 struct MEMWB{
+    long long PC;
     long long val_P;
     unsigned int Mem_read;
     REG ALU_out;
@@ -97,6 +100,7 @@ struct MEMWB{
 
 void print_MEMWB()
 {
+    printf("PC = %llx\n",MEM_WB_old.PC);
     printf("Mem_read = %x\n",MEM_WB_old.Mem_read);
     printf("ALU_out = %llx\n",MEM_WB_old.ALU_out);
     printf("Reg_dst = %x\n",MEM_WB_old.Reg_dst);

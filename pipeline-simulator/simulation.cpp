@@ -28,8 +28,9 @@ long long cycle_num=0;
 bool mul_flag = false;
 bool div_flag = false;
 bool rem_flag = false;
+bool end_flag = false;
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 # define dbg_printf(...) printf(__VA_ARGS__)
 #else
@@ -120,12 +121,18 @@ void load()
 int main()
 {
     inst_num=0;
-    cycle_num=0;
+    cycle_num=4;
     mul_flag=false;
     div_flag=false;
     rem_flag=false;
+    end_flag=false;
     load();
     simulate(0);
+    long long addr;
+    int cnt;
+    int size;
+    scanf("%llx%d%d",&addr,&cnt,&size);
+    print_memory(addr,cnt,size);
     cout << "simulation over!" << endl;
     cout << "instruction num:" << inst_num << endl;
     cout << "cycle num:" << cycle_num << endl;
@@ -136,7 +143,7 @@ int main()
 //simulation.cpp的主函数,if_debug表示是否为单步调试模式
 void simulate(int if_debug)
 {
-    while(PC!=endPC && inst_num<=20)
+    while(!end_flag)
     {
 #ifdef DEBUG
         {
@@ -144,7 +151,7 @@ void simulate(int if_debug)
             dbg_printf( "instruction num: %d\n",inst_num);
         }
 #endif
-
+        printf( "instruction num: %d\n",inst_num);
         IF();
         ID();
         EX();
@@ -168,10 +175,10 @@ void simulate(int if_debug)
         dbg_printf( "=======================================================\n\n\n");
         }
 #endif
-
+        //print_REG();
         if(if_debug==1) break;
     }
-    if(PC==endPC)
+    if(end_flag)
         cout<<"Simulation finished"<<endl;
 }
 
@@ -180,8 +187,8 @@ void IF()
 {
 #ifdef DEBUG
     {
-        dbg_printf( "-------------IF--------------\n");
-        dbg_printf( "PC:%llx\n",PC);
+        printf( "-------------IF--------------\n");
+        printf( "PC:%llx\n",PC);
     }
 #endif
 
@@ -211,6 +218,29 @@ void IF()
         {
             Imm=ext_signed(getbit(Inst,0,11),1,12);
             PC=reg[rs]+Imm;//PredictPC
+            //printf("%llx\n",PC);
+            if(ID_EX.Ctrl_WB_RegWrite==1 && rs==ID_EX.Reg_dst)
+            {
+                stall_flag[0]=1;
+                bubble_flag[1]=1;
+                inst_num--;
+                dbg_printf("data risk!\n");
+            }
+            else if(EX_MEM.Ctrl_WB_RegWrite==1 && rs==EX_MEM.Reg_dst)
+            {
+                stall_flag[0]=1;
+                bubble_flag[1]=1;
+                inst_num--;
+                dbg_printf("data risk!\n");
+            }
+            else if(MEM_WB.Ctrl_WB_RegWrite==1 && rs==MEM_WB.Reg_dst)
+            {
+                stall_flag[0]=1;
+                bubble_flag[1]=1;
+                inst_num--;
+                printf("here!!!!!\n");
+                dbg_printf("data risk!\n");
+            }
         }
         else dbg_printf("Invalid instruction\n");
     }
@@ -728,6 +758,7 @@ void ID()
         stall_flag[0]=1;
         stall_flag[1]=1;
         bubble_flag[2]=1;
+        inst_num--;
         dbg_printf("data risk!\n");
     }
     else if(EX_MEM.Ctrl_WB_RegWrite==1 && (rs==EX_MEM.Reg_dst||rt==EX_MEM.Reg_dst))
@@ -735,6 +766,7 @@ void ID()
         stall_flag[0]=1;
         stall_flag[1]=1;
         bubble_flag[2]=1;
+        inst_num--;
         dbg_printf("data risk!\n");
     }
     else if(MEM_WB.Ctrl_WB_RegWrite==1 && (rs==MEM_WB.Reg_dst||rt==MEM_WB.Reg_dst))
@@ -742,6 +774,7 @@ void ID()
         stall_flag[0]=1;
         stall_flag[1]=1;
         bubble_flag[2]=1;
+        inst_num--;
         dbg_printf("data risk!\n");
     }
     //choose reg dst address                                       
@@ -778,6 +811,8 @@ void ID()
 
     ID_EX_old.Ctrl_WB_RegWrite=RegWrite;
     ID_EX_old.Ctrl_WB_MemtoReg=MemtoReg;
+
+    ID_EX_old.val_P = IF_ID.val_P;
 
 #ifdef DEBUG
 {
@@ -1054,6 +1089,8 @@ void EX()
 
     EX_MEM_old.Ctrl_WB_RegWrite=ID_EX.Ctrl_WB_RegWrite;
     EX_MEM_old.Ctrl_WB_MemtoReg=ID_EX.Ctrl_WB_MemtoReg;
+
+    EX_MEM_old.val_P = ID_EX.val_P;
 #ifdef DEBUG
     {
         dbg_printf("EX finished\n");
@@ -1139,6 +1176,9 @@ void EX()
 
     MEM_WB_old.Ctrl_WB_MemtoReg=EX_MEM.Ctrl_WB_MemtoReg;
     MEM_WB_old.Ctrl_WB_RegWrite=EX_MEM.Ctrl_WB_RegWrite;
+
+    MEM_WB_old.val_P = EX_MEM.val_P;
+    MEM_WB_old.PC = EX_MEM.PC;
 #ifdef DEBUG
     {
         dbg_printf("MEM finished\n");
@@ -1164,4 +1204,11 @@ void WB()
     dbg_printf("WB finished\n");
     //instruction reaches WB then update inst_num
     inst_num++;
+    if(MEM_WB.PC == endPC) end_flag = true;
+
+    if(MEM_WB.PC != 0)
+    {
+        printf( "PC:%llx\n",MEM_WB.PC);
+        //print_REG();
+    }
 }
