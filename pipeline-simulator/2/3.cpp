@@ -1,7 +1,5 @@
 #include<stdio.h>
 int result[5]={1,2,3,4,5};
-//result[5]={0,2,6,12,20}
-//11010
 int main()
 {
 	int i=0;

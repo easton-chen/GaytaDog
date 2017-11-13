@@ -1,7 +1,5 @@
 #include<stdio.h>
 int a=0,b=1,c=2;
-//a=3,b=7,c=9
-//11778,11760,11764
 int main()
 {
 	a=a+b;

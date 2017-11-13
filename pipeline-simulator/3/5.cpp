@@ -1,9 +1,9 @@
 #include<stdio.h>
-int result[5]={3,6,9,12,15};
+int result[5]={1,2,3,4,5};
 int main()
 {
 	int i=0;
-	for(i=3;i<=15;i+=3)
+	for(i=1;i<=5;i+=1)
 	{
 		result[i]=result[i]/i;
 	}
