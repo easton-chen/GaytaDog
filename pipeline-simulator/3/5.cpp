@@ -1,5 +1,5 @@
 #include<stdio.h>
-int result[5]={1,2,3,4,5};
+int result[6]={0,1,2,3,4,5};
 int main()
 {
 	int i=0;
