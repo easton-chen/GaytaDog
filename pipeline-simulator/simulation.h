@@ -68,6 +68,7 @@ int bubble_flag[5];
 //加载内存
 void load_memory();
 
+void Init();
 //相当于simulation.cpp的主函数
 void simulate(int if_step);
 
@@ -80,7 +81,7 @@ void EX();
 void MEM();
 
 void WB();
-
+void PredictPC();
 //从32位指令inst中取出指定位
 unsigned int getbit(unsigned int inst,int s,int e)
 {

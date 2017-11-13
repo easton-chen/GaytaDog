@@ -30,7 +30,7 @@ bool div_flag = false;
 bool rem_flag = false;
 bool end_flag = false;
 
-//#define DEBUG
+#define DEBUG
 #ifdef DEBUG
 # define dbg_printf(...) printf(__VA_ARGS__)
 #else
@@ -120,6 +120,20 @@ void load()
     reg[3]=gp;
 }
 
+void Init()
+{
+    memset(&IF_ID,0,sizeof(IF_ID));
+    memset(&IF_ID_old,0,sizeof(IF_ID_old));
+
+    memset(&ID_EX,0,sizeof(ID_EX));
+    memset(&ID_EX_old,0,sizeof(ID_EX_old));
+
+    memset(&EX_MEM,0,sizeof(EX_MEM));
+    memset(&EX_MEM_old,0,sizeof(EX_MEM_old));
+
+    memset(&MEM_WB,0,sizeof(MEM_WB));
+    memset(&MEM_WB_old,0,sizeof(MEM_WB_old));   
+}
 int main()
 {
     inst_num=0;
@@ -129,13 +143,21 @@ int main()
     rem_flag=false;
     end_flag=false;
     load();
+    Init();
     simulate(0);
     long long addr;
     int cnt;
     int size;
-    printf("please input the addr, cnt and size:\n");
-    scanf("%llx%d%d",&addr,&cnt,&size);
-    print_memory(addr,cnt,size);
+    int query_num=1;
+    printf("please input the number of your queries\n");
+    scanf("%d",&query_num);
+    while(query_num--)
+    {
+        printf("please input the addr, cnt and size:\n");
+        scanf("%llx%d%d",&addr,&cnt,&size);
+        print_memory(addr,cnt,size);
+    }
+
     cout << "simulation over!" << endl;
     cout << "instruction num:" << inst_num << endl;
     cout << "cycle num:" << cycle_num << endl;
@@ -159,7 +181,7 @@ void simulate(int if_debug)
         EX();
         MEM();
         WB();
-
+        PredictPC();
         //更新中间寄存器
         //IF_ID=IF_ID_old;
         //ID_EX=ID_EX_old;
@@ -176,38 +198,16 @@ void simulate(int if_debug)
         print_REG();
         dbg_printf( "=======================================================\n\n\n");
         }
-#endif
+#endif  
         //print_REG();
         if(if_debug==1) break;
     }
     if(end_flag)
         cout<<"Simulation finished"<<endl;
 }
-
-//取指
-void IF()
+void PredictPC()
 {
-#ifdef DEBUG
-    {
-        printf( "-------------IF--------------\n");
-        printf( "PC:%llx\n",PC);
-    }
-#endif
-
-    //write IF_ID_old
-    //IF_ID_old.inst=memory[PC];
-    memcpy(&IF_ID_old.inst,memory+PC,4);
     Inst=IF_ID_old.inst;
-    IF_ID_old.PC=PC;
-    IF_ID_old.val_P=PC+4;
-
-#ifdef DEBUG
-    {
-        dbg_printf( "instruction:%08x\n",IF_ID_old.inst);
-        dbg_printf( "IF finished\n");
-        print_IFID();
-    }
-#endif
     unsigned int OP=getbit(Inst,25,31);
     long long Imm;
     unsigned int rs=0;
@@ -236,6 +236,13 @@ void IF()
                 dbg_printf("data risk!\n");
             }
             else if(MEM_WB.Ctrl_WB_RegWrite==1 && rs==MEM_WB.Reg_dst)
+            {
+                stall_flag[0]=1;
+                bubble_flag[1]=1;
+                inst_num--;
+                dbg_printf("data risk!\n");
+            }
+            else if(ID_EX_old.Ctrl_WB_RegWrite==1 && rs ==ID_EX_old.Reg_dst)
             {
                 stall_flag[0]=1;
                 bubble_flag[1]=1;
@@ -276,6 +283,32 @@ void IF()
     }
     else
     PC=PC+4;
+}
+
+//取指
+void IF()
+{
+#ifdef DEBUG
+    {
+        printf( "-------------IF--------------\n");
+        printf( "PC:%llx\n",PC);
+    }
+#endif
+
+    //write IF_ID_old
+    //IF_ID_old.inst=memory[PC];
+    memcpy(&IF_ID_old.inst,memory+PC,4);
+    IF_ID_old.PC=PC;
+    IF_ID_old.val_P=PC+4;
+
+#ifdef DEBUG
+    {
+        dbg_printf( "instruction:%08x\n",IF_ID_old.inst);
+        dbg_printf( "IF finished\n");
+        print_IFID();
+    }
+#endif
+
 }
 
 //译码
@@ -742,11 +775,18 @@ void ID()
         {
             ALUop=44;
         }
+        else if(fuc7==32 && fuc3==0)//subw
+        {
+            ALUop=46;
+        }
         else if(fuc7==1)
             switch(fuc3)
             {
                 case 0:
                     ALUop=40;
+                    break;
+                case 4:
+                    ALUop=45;
                     break;
                 default:
                     dbg_printf("Invalid instruction\n");
@@ -864,6 +904,8 @@ void ID()
         case 42:dbg_printf("srliw:R[rd] ← R[rs1] >> imm\n[31:0]\n");break;
         case 43:dbg_printf("sraiw:R[rd] ← R[rs1] >> imm[31:0]\n");break;
         case 44:dbg_printf("addw\n");break;
+        case 45:dbg_printf("divw\n");break;
+        case 46:dbg_printf("subw\n");break;
         default: dbg_printf("Invalid instruction\n");break;
 
     }
@@ -891,8 +933,6 @@ void EX()
     char ALUSrc=ID_EX.Ctrl_EX_ALUSrc;
     char ALUop=ID_EX.Ctrl_EX_ALUOp;
     char RegDst=ID_EX.Ctrl_EX_RegDst;
-
-    int Zero;
     
     switch(ALUop){
         case 1:
@@ -1053,17 +1093,26 @@ void EX()
             ALUout=ext_signed((Rs>>Imm)&0xffffffff,0,32);
             break;
         case 44://addw
-            ALUout=ext_signed((Rs+Rt)&0xffffffff,0,32);
+            ALUout=ext_signed((Rs+Rt)&0xffffffff,1,32);
             break;
+        case 45:
+            ALUout=ext_signed((Rs&0xffffffff)/(Rt&0xffffffff),1,32);
+            break;
+        case 46://subw
+            ALUout=ext_signed((Rs-Rt)&0xffffffff,1,32);
         default:
             dbg_printf("Invalid instruction\n");
             break;
     }
 
-    if(ALUop == 8) div_flag = true;
+    if(ALUop == 8||ALUop == 45) div_flag = true;
     else if(ALUop == 11) rem_flag = true;
-    else div_flag = rem_flag = false;
-    if(ALUop==2||ALUop==5) mul_flag = true;
+    else 
+        {
+            div_flag =false;
+            rem_flag = false;
+        }
+    if(ALUop==2||ALUop==5||ALUop==40) mul_flag = true;
     else mul_flag = false;
 /*
     //choose reg dst address
