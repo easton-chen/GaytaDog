@@ -1248,7 +1248,24 @@ void EX()
     }
 #endif
 }
-
+bool If_Bubble()
+{
+    if (MEM_WB.PC!=0) 
+        return false;
+    if(MEM_WB.val_P!=0) 
+        return false;
+    if(MEM_WB.Mem_read!=0)
+        return false;
+    if(MEM_WB.ALU_out!=0)
+        return false;
+    if (MEM_WB.Reg_dst!=0) 
+        return false;
+    if(MEM_WB.Ctrl_WB_RegWrite!=0)
+        return false;
+    if(MEM_WB.Ctrl_WB_MemtoReg!=0)
+        return false;
+    return true; 
+}
 
 //写回
 void WB()
@@ -1265,6 +1282,7 @@ void WB()
     if(Ctrl_WB_RegWrite==1) reg[Reg_dst]=ALU_out;
     dbg_printf("WB finished\n");
     //instruction reaches WB then update inst_num
+    if(!If_Bubble())
     inst_num++;
     if(MEM_WB.PC == endPC) end_flag = true;
 
