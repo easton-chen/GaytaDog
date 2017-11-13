@@ -64,7 +64,7 @@ unsigned int imm5=0;
 //stall and bubble flag
 int stall_flag[5];
 int bubble_flag[5];
-
+bool Cnd=true;
 //加载内存
 void load_memory();
 

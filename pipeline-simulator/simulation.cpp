@@ -30,7 +30,7 @@ bool div_flag = false;
 bool rem_flag = false;
 bool end_flag = false;
 
-#define DEBUG
+//#define DEBUG
 #ifdef DEBUG
 # define dbg_printf(...) printf(__VA_ARGS__)
 #else
@@ -156,6 +156,7 @@ int main()
         printf("please input the addr, cnt and size:\n");
         scanf("%llx%d%d",&addr,&cnt,&size);
         print_memory(addr,cnt,size);
+        printf("\n\n");
     }
 
     cout << "simulation over!" << endl;
@@ -212,7 +213,13 @@ void PredictPC()
     long long Imm;
     unsigned int rs=0;
     unsigned int fuc3=0;
-    if(OP==OP_JALR)//0x67
+    if(!Cnd)
+    {
+        PC=EX_MEM_old.val_P;
+        Cnd= true;
+        return;
+    }
+    if(OP==OP_JALR )//0x67
     {
         rs=getbit(Inst,12,16);
         fuc3=getbit(Inst,17,19);
@@ -276,13 +283,14 @@ void PredictPC()
                 break;
         }
     }
-    else if(OP==OP_JAL)//0x6f
+    else if(OP==OP_JAL )//0x6f
     {
         Imm=ext_signed(((getbit(Inst,0,0)<<20) + (getbit(Inst,12,19)<<12) + (getbit(Inst,11,11)<<11) + (getbit(Inst,1,10)<<1)),1,21);
         PC=PC+Imm;
     }
     else
-    PC=PC+4;
+        PC=PC+4;
+    Cnd=true;
 }
 
 //取指
@@ -1037,7 +1045,8 @@ void EX()
             if((long long)Rs!=(long long)Rt) 
             {
                 bubble_flag[1]=bubble_flag[2]=1;
-                PC=ID_EX.val_P;
+                //PC=ID_EX.val_P;
+                Cnd=false;
             }
             break;
         case 32:
@@ -1045,7 +1054,8 @@ void EX()
             if((long long)Rs==(long long)Rt)
             {
                 bubble_flag[1]=bubble_flag[2]=1;
-                PC=ID_EX.val_P;
+                //PC=ID_EX.val_P;
+                Cnd=false;
             }
             break;
         case 33:
@@ -1053,7 +1063,8 @@ void EX()
             if((long long)Rs>=(long long)Rt)
             {
                 bubble_flag[1]=bubble_flag[2]=1;
-                PC=ID_EX.val_P;
+                //PC=ID_EX.val_P;
+                Cnd=false;
             }
             break;
         case 34:
@@ -1061,7 +1072,8 @@ void EX()
             if((long long)Rs<(long long)Rt)
             {
                 bubble_flag[1]=bubble_flag[2]=1;
-                PC=ID_EX.val_P;
+                //PC=ID_EX.val_P;
+                Cnd=false;
             }
             break;
         case 35:
