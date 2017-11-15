@@ -130,6 +130,8 @@ int main()
     int cnt;
     int size;
     int query_num=1;
+    
+    /*
     printf("please input the number of your queries\n");
     scanf("%d",&query_num);
     while(query_num--)
@@ -139,6 +141,7 @@ int main()
         print_memory(addr,cnt,size);
         printf("\n\n");
     }
+    */
 
     double CPI = (double)cycle_num/(double)inst_num;
     dbg_printf("simulation finished\n");
