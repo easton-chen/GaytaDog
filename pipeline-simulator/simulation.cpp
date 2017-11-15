@@ -122,6 +122,8 @@ void load()
 
 void Init()
 {
+    branch_map.clear();
+
     memset(&IF_ID,0,sizeof(IF_ID));
     memset(&IF_ID_old,0,sizeof(IF_ID_old));
 
@@ -214,12 +216,15 @@ void PredictPC()
     long long Imm;
     unsigned int rs=0;
     unsigned int fuc3=0;
-    if(!Cnd)
+
+    /*if(!Cnd)
     {
-        PC=EX_MEM_old.val_P;
+
+        PC=EX_MEM_old.val_P+4;
         Cnd= true;
         return;
-    }
+    }*/
+
     if(OP==OP_JALR )//0x67
     {
         rs=getbit(Inst,12,16);
@@ -260,37 +265,78 @@ void PredictPC()
         }
         else dbg_printf("Invalid instruction\n");
     }
-    else if(OP==OP_BEQ)//0x63
-    {
-        Imm=ext_signed(((getbit(Inst,0,0)<<12) + (getbit(Inst,24,24)<<11) + (getbit(Inst,1,6)<<5) + (getbit(Inst,20,23)<<1)),1,13);
-        fuc3=getbit(Inst,17,19);
-
-        switch(fuc3)
-        {
-            case 0:
-                PC=PC+Imm;//if(R[rs1] == R[rs2]) PC ← PC + {offset, 1b'0}
-                break;
-            case 1:
-                PC=PC+Imm;//if(R[rs1] != R[rs2]) PC ← PC + {offset, 1b'0}
-                break;
-            case 4:
-                PC=PC+Imm;//if(R[rs1] < R[rs2]) PC ← PC + {offset, 1b'0}
-                break;
-            case 5:
-                PC=PC+Imm;//if(R[rs1] >= R[rs2]) PC ← PC + {offset, 1b'0}
-                break;
-            default:
-                dbg_printf("Invalid instruction\n");
-                break;
-        }
-    }
     else if(OP==OP_JAL )//0x6f
     {
         Imm=ext_signed(((getbit(Inst,0,0)<<20) + (getbit(Inst,12,19)<<12) + (getbit(Inst,11,11)<<11) + (getbit(Inst,1,10)<<1)),1,21);
         PC=PC+Imm;
     }
+
+    else if(OP==OP_BEQ)//0x63
+    {
+        if(branch_map.find(IF_ID_old.PC)==branch_map.end())
+        {
+            Imm=ext_signed(((getbit(Inst,0,0)<<12) + (getbit(Inst,24,24)<<11) + (getbit(Inst,1,6)<<5) + (getbit(Inst,20,23)<<1)),1,13);
+            fuc3=getbit(Inst,17,19);
+            switch(fuc3)
+            {
+                case 0:
+                    PC=PC+Imm;//if(R[rs1] == R[rs2]) PC ← PC + {offset, 1b'0}
+
+                    break;
+                case 1:
+                    PC=PC+Imm;//if(R[rs1] != R[rs2]) PC ← PC + {offset, 1b'0}
+                    break;
+                case 4:
+                    PC=PC+Imm;//if(R[rs1] < R[rs2]) PC ← PC + {offset, 1b'0}
+                    break;
+                case 5:
+                    PC=PC+Imm;//if(R[rs1] >= R[rs2]) PC ← PC + {offset, 1b'0}
+                    break;
+                default:
+                    dbg_printf("Invalid instruction\n");
+                    break;
+            }
+            struct Branch_Inst tmp;
+            tmp.stat=STRONG_Branch;
+            tmp.JMP_PC=PC;
+            branch_map.insert(std::pair<long long,struct Branch_Inst>(IF_ID_old.PC,tmp));
+        }
+        else
+        {
+            if(branch_map[IF_ID_old.PC].stat!=NON_Branch)
+                PC=branch_map[IF_ID_old.PC].JMP_PC;
+            else
+                PC=PC+4;
+        }
+
+        
+    }
+
     else
         PC=PC+4;
+
+    if(ID_EX.Ctrl_M_Branch==1)
+    {
+        if(!Cnd)
+        {
+            if(branch_map[EX_MEM_old.PC].stat!=NON_Branch)
+            {
+                bubble_flag[1]=bubble_flag[2]=1;
+                PC=EX_MEM_old.PC;
+            }    
+            update_branch_map(branch_map[EX_MEM_old.PC],Cnd);       
+            Cnd=true;
+        }
+        else
+        {
+            if(branch_map[EX_MEM_old.PC].stat==NON_Branch)
+                {
+                    bubble_flag[1]=bubble_flag[2]=1;
+                    PC=branch_map[EX_MEM_old.PC].JMP_PC;
+                }
+            update_branch_map(branch_map[EX_MEM_old.PC],Cnd);
+        }
+    }
     Cnd=true;
 }
 
@@ -592,7 +638,7 @@ void ID()
         RegDst=1;
         ALUop=37;
         ALUSrc=1;
-        Branch=1;
+        Branch=0;
         MemRead=0;
         MemWrite=0;
         RegWrite=1;
@@ -701,7 +747,7 @@ void ID()
             RegDst=1;
             ALUop=25;
             ALUSrc=1;
-            Branch=1;
+            Branch=0;
             MemRead=0;
             MemWrite=0;
             RegWrite=1;
@@ -1045,7 +1091,7 @@ void EX()
             //if(Rs==Rt) PC=temp_PC+Imm;
             if((long long)Rs!=(long long)Rt) 
             {
-                bubble_flag[1]=bubble_flag[2]=1;
+                //bubble_flag[1]=bubble_flag[2]=1;
                 //PC=ID_EX.val_P;
                 Cnd=false;
             }
@@ -1054,7 +1100,7 @@ void EX()
             //if((long long)Rs!=(long long)Rt) PC=temp_PC+Imm;
             if((long long)Rs==(long long)Rt)
             {
-                bubble_flag[1]=bubble_flag[2]=1;
+                //bubble_flag[1]=bubble_flag[2]=1;
                 //PC=ID_EX.val_P;
                 Cnd=false;
             }
@@ -1063,7 +1109,7 @@ void EX()
             //if((long long)Rs<(long long)Rt) PC=temp_PC+Imm;
             if((long long)Rs>=(long long)Rt)
             {
-                bubble_flag[1]=bubble_flag[2]=1;
+                //bubble_flag[1]=bubble_flag[2]=1;
                 //PC=ID_EX.val_P;
                 Cnd=false;
             }
@@ -1072,7 +1118,7 @@ void EX()
             //if((long long)Rs>=(long long)Rt) PC=temp_PC+Imm;
             if((long long)Rs<(long long)Rt)
             {
-                bubble_flag[1]=bubble_flag[2]=1;
+                //bubble_flag[1]=bubble_flag[2]=1;
                 //PC=ID_EX.val_P;
                 Cnd=false;
             }

@@ -6,6 +6,7 @@
 #include<time.h>
 #include<stdlib.h>
 #include<string.h>
+#include<map>
 #include"reg_def.h"
 
 #define OP_JAL 111
@@ -46,6 +47,15 @@
 
 #define MAX 100000000
 
+enum Branch_Stat {STRONG_Branch,MEDIUM_Branch,WEAK_Branch,NON_Branch};
+
+struct Branch_Inst
+{
+    Branch_Stat stat;
+    long long JMP_PC;
+};
+
+std::map<long long,struct Branch_Inst> branch_map;
 unsigned char memory[MAX]={0};
 REG reg[32]={0};
 long long PC=0;
@@ -313,4 +323,30 @@ void update_latch()
     //reset flag
     memset(stall_flag,0,sizeof(int)*5);
     memset(bubble_flag,0,sizeof(int)*5);
+}
+
+void update_branch_map(struct Branch_Inst & br_inst,bool cnd)
+{
+    if(cnd)
+    {
+        switch(br_inst.stat)
+        {
+            case STRONG_Branch: break;
+            case MEDIUM_Branch: br_inst.stat=STRONG_Branch;break;
+            case WEAK_Branch: br_inst.stat=MEDIUM_Branch;break;
+            case NON_Branch: br_inst.stat=WEAK_Branch;break;
+            default :break;
+        }
+    }
+    else
+    {
+        switch(br_inst.stat)
+        {
+            case STRONG_Branch: br_inst.stat=MEDIUM_Branch;break;
+            case MEDIUM_Branch: br_inst.stat=WEAK_Branch;break;
+            case WEAK_Branch: br_inst.stat=NON_Branch;break;
+            case NON_Branch:break;
+            default :break;
+        }
+    }
 }
