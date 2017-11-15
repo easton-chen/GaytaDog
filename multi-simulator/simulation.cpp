@@ -126,6 +126,20 @@ int main()
     rem_flag = false;
     load();
     simulate(0);
+    long long addr;
+    int cnt;
+    int size;
+    int query_num=1;
+    printf("please input the number of your queries\n");
+    scanf("%d",&query_num);
+    while(query_num--)
+    {
+        printf("please input the addr, cnt and size:\n");
+        scanf("%llx%d%d",&addr,&cnt,&size);
+        print_memory(addr,cnt,size);
+        printf("\n\n");
+    }
+
     double CPI = (double)cycle_num/(double)inst_num;
     dbg_printf("simulation finished\n");
     printf("instruction num: %d\n", inst_num);

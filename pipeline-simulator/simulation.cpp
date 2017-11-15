@@ -132,7 +132,8 @@ void Init()
     memset(&EX_MEM_old,0,sizeof(EX_MEM_old));
 
     memset(&MEM_WB,0,sizeof(MEM_WB));
-    memset(&MEM_WB_old,0,sizeof(MEM_WB_old));   
+    memset(&MEM_WB_old,0,sizeof(MEM_WB_old));
+
 }
 int main()
 {
@@ -232,28 +233,28 @@ void PredictPC()
             {
                 stall_flag[0]=1;
                 bubble_flag[1]=1;
-                inst_num--;
+                //inst_num--;
                 dbg_printf("data risk!\n");
             }
             else if(EX_MEM.Ctrl_WB_RegWrite==1 && rs==EX_MEM.Reg_dst)
             {
                 stall_flag[0]=1;
                 bubble_flag[1]=1;
-                inst_num--;
+                //inst_num--;
                 dbg_printf("data risk!\n");
             }
             else if(MEM_WB.Ctrl_WB_RegWrite==1 && rs==MEM_WB.Reg_dst)
             {
                 stall_flag[0]=1;
                 bubble_flag[1]=1;
-                inst_num--;
+                //inst_num--;
                 dbg_printf("data risk!\n");
             }
             else if(ID_EX_old.Ctrl_WB_RegWrite==1 && rs ==ID_EX_old.Reg_dst)
             {
                 stall_flag[0]=1;
                 bubble_flag[1]=1;
-                inst_num--;
+                //inst_num--;
                 dbg_printf("data risk!\n");
             }
         }
@@ -334,9 +335,9 @@ void ID()
     int EXTop=0;
     unsigned int Imm_length=0;
 
-    char RegDst,ALUop,ALUSrc;
-    char Branch,MemRead,MemWrite;
-    char RegWrite,MemtoReg;
+    char RegDst=0,ALUop=0,ALUSrc=0;
+    char Branch=0,MemRead=0,MemWrite=0;
+    char RegWrite=0,MemtoReg=0;
 
     unsigned int OP=getbit(inst,25,31);
 
@@ -807,7 +808,7 @@ void ID()
         stall_flag[0]=1;
         stall_flag[1]=1;
         bubble_flag[2]=1;
-        inst_num--;
+        //inst_num--;
         dbg_printf("data risk!\n");
     }
     else if(EX_MEM.Ctrl_WB_RegWrite==1 && (rs==EX_MEM.Reg_dst||rt==EX_MEM.Reg_dst))
@@ -815,7 +816,7 @@ void ID()
         stall_flag[0]=1;
         stall_flag[1]=1;
         bubble_flag[2]=1;
-        inst_num--;
+        //inst_num--;
         dbg_printf("data risk!\n");
     }
     else if(MEM_WB.Ctrl_WB_RegWrite==1 && (rs==MEM_WB.Reg_dst||rt==MEM_WB.Reg_dst))
@@ -823,7 +824,7 @@ void ID()
         stall_flag[0]=1;
         stall_flag[1]=1;
         bubble_flag[2]=1;
-        inst_num--;
+        //inst_num--;
         dbg_printf("data risk!\n");
     }
     //choose reg dst address                                       
@@ -936,7 +937,7 @@ void EX()
 
     REG Rs=ID_EX.Reg_Rs;
     REG Rt=ID_EX.Reg_Rt;
-    REG ALUout;
+    REG ALUout=0;
 
     char ALUSrc=ID_EX.Ctrl_EX_ALUSrc;
     char ALUop=ID_EX.Ctrl_EX_ALUOp;

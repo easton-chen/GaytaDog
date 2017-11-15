@@ -43,7 +43,7 @@ void print_IDEX()
     printf("Reg_Rs = %llx\n", ID_EX_old.Reg_Rs);
     printf("Reg_Rt = %llx\n", ID_EX_old.Reg_Rt);
     printf("Ctrl_EX_ALUSrc = %x\n", ID_EX_old.Ctrl_EX_ALUSrc);
-    printf("Ctrl_EX_ALUOp = %x\n", ID_EX_old.Ctrl_EX_ALUOp);
+    printf("Ctrl_EX_ALUOp = %d\n", ID_EX_old.Ctrl_EX_ALUOp);
     printf("Ctrl_EX_RegDst = %x\n", ID_EX_old.Ctrl_EX_RegDst);
     printf("Ctrl_M_Branch = %x\n", ID_EX_old.Ctrl_M_Branch);
     printf("Ctrl_M_MemWrite = %x\n", ID_EX_old.Ctrl_M_MemWrite);
@@ -78,7 +78,7 @@ void print_EXMEM()
     printf("ALU_out = %llx\n",EX_MEM_old.ALU_out);
     printf("Zero = %x\n",EX_MEM_old.Zero);
     printf("Reg_Rt = %llx\n",EX_MEM_old.Reg_Rt);
-    printf("Ctrl_EX_ALUOp = %x\n",EX_MEM_old.Ctrl_EX_ALUOp);
+    printf("Ctrl_EX_ALUOp = %d\n",EX_MEM_old.Ctrl_EX_ALUOp);
     printf("Ctrl_M_Branch = %x\n",EX_MEM_old.Ctrl_M_Branch);
     printf("Ctrl_M_MemWrite = %x\n",EX_MEM_old.Ctrl_M_MemWrite);
     printf("Ctrl_M_MemRead = %x\n",EX_MEM_old.Ctrl_M_MemRead);

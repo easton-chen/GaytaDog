@@ -203,6 +203,18 @@ void read_elf_sections()
             memcpy(&temp_size, &elf64_shdr.sh_size, sizeof(elf64_shdr.sh_size));
             dsize += temp_size;
         }
+        else if(strcmp(section_name,".eh_frame")==0)
+        {
+            long long temp_size = 0;
+            memcpy(&temp_size, &elf64_shdr.sh_size, sizeof(elf64_shdr.sh_size));
+            dsize += temp_size;
+        }
+        else if(strcmp(section_name,".jcr")==0)
+        {
+            long long temp_size = 0;
+            memcpy(&temp_size, &elf64_shdr.sh_size, sizeof(elf64_shdr.sh_size));
+            dsize += temp_size;
+        }
         else if(strcmp(section_name,".data")==0)
         {
             long long temp_size = 0;
