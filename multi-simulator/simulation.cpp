@@ -80,7 +80,9 @@ void load_memory()
 #endif
 
     entry = vcadr;
-    endPC=madr+msize-4;
+    endPC=madr+msize-3;
+    if(endPC%4!=0)
+        endPC-=1;
 
 #ifdef DEBUG
     {
@@ -126,9 +128,9 @@ int main()
     simulate(0);
     double CPI = (double)cycle_num/(double)inst_num;
     dbg_printf("simulation finished\n");
-    dbg_printf("instruction num: %d\n", inst_num);
-    dbg_printf("cycle num: %d\n", cycle_num);
-    dbg_printf("CPI: %lf\n", CPI);
+    printf("instruction num: %d\n", inst_num);
+    printf("cycle num: %d\n", cycle_num);
+    printf("CPI: %lf\n", CPI);
 }
 //simulation.cpp的主函数,if_debug表示是否为单步调试模式
 void simulate(int if_debug)
@@ -662,11 +664,18 @@ void ID()
         {
             ALUop=44;
         }
+        else if(fuc7==32 && fuc3==0)//subw
+        {
+            ALUop=46;
+        }
         else if(fuc7==1)
             switch(fuc3)
             {
                 case 0:
                     ALUop=40;
+                    break;
+                case 4:
+                    ALUop=45;
                     break;
                 default:
                     dbg_printf("Invalid instruction\n");
@@ -745,6 +754,8 @@ void ID()
         case 42:dbg_printf("srliw:R[rd] ← R[rs1] >> imm\n[31:0]\n");break;
         case 43:dbg_printf("sraiw:R[rd] ← R[rs1] >> imm[31:0]\n");break;
         case 44:dbg_printf("addw\n");break;
+        case 45:dbg_printf("divw\n");break;
+        case 46:dbg_printf("subw\n");break;
         default: dbg_printf("Invalid instruction\n");break;
 
     }
@@ -958,12 +969,20 @@ void EX()
             ALUout=ext_signed((Rs+Rt)&0xffffffff,0,32);
             cycle_num+=4;
             break;
+        case 45://divw
+            ALUout=ext_signed((Rs&0xffffffff)/(Rt&0xffffffff),1,32);
+            if(rem_flag) cycle_num+=3;
+            else cycle_num+=43;
+            break;
+        case 46://subw
+            ALUout=ext_signed((Rs-Rt)&0xffffffff,1,32);
+            cycle_num+=4;
         default:
             dbg_printf("Invalid instruction\n");
             break;
     }
 
-    if(ALUop == 8) div_flag = true;
+    if(ALUop == 8 || ALUop == 45) div_flag = true;
     else if(ALUop == 11) rem_flag = true;
     else div_flag = rem_flag = false;
 
