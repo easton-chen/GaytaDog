@@ -140,7 +140,7 @@ void Init()
 int main()
 {
     inst_num=0;
-    cycle_num=4;
+    cycle_num=0;
     mul_flag=false;
     div_flag=false;
     rem_flag=false;
@@ -180,6 +180,7 @@ void simulate(int if_debug)
             dbg_printf( "instruction num: %d\n",inst_num);
         }
 #endif
+
         IF();
         ID();
         EX();
@@ -197,6 +198,7 @@ void simulate(int if_debug)
 
         //update cycle number
         cycle_num++;
+        //cout << cycle_num << endl;
 #ifdef DEBUG
         {
         print_REG();
@@ -281,7 +283,6 @@ void PredictPC()
             {
                 case 0:
                     PC=PC+Imm;//if(R[rs1] == R[rs2]) PC ← PC + {offset, 1b'0}
-
                     break;
                 case 1:
                     PC=PC+Imm;//if(R[rs1] != R[rs2]) PC ← PC + {offset, 1b'0}
@@ -322,7 +323,7 @@ void PredictPC()
             if(branch_map[EX_MEM_old.PC].stat!=NON_Branch)
             {
                 bubble_flag[1]=bubble_flag[2]=1;
-                PC=EX_MEM_old.PC;
+                PC=EX_MEM_old.PC+4;
             }    
             update_branch_map(branch_map[EX_MEM_old.PC],Cnd);       
             Cnd=true;
@@ -330,10 +331,10 @@ void PredictPC()
         else
         {
             if(branch_map[EX_MEM_old.PC].stat==NON_Branch)
-                {
-                    bubble_flag[1]=bubble_flag[2]=1;
-                    PC=branch_map[EX_MEM_old.PC].JMP_PC;
-                }
+            {
+                bubble_flag[1]=bubble_flag[2]=1;
+                PC=branch_map[EX_MEM_old.PC].JMP_PC;
+            }
             update_branch_map(branch_map[EX_MEM_old.PC],Cnd);
         }
     }
@@ -1330,7 +1331,10 @@ void WB()
     dbg_printf("WB finished\n");
     //instruction reaches WB then update inst_num
     if(!If_Bubble())
-    inst_num++;
+    {
+    	inst_num++;
+    	//printf("inst_num:%d\t PC:%llx\n",inst_num, MEM_WB.PC);
+    }
     if(MEM_WB.PC == endPC) end_flag = true;
 
     if(MEM_WB.PC != 0)
