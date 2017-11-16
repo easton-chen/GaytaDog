@@ -170,8 +170,10 @@ void simulate(int if_debug)
         //EX_MEM=EX_MEM_old;
         //MEM_WB=MEM_WB_old;
         reg[0]=0;//一直为零
+        
 
         inst_num++;
+        printf("inst_num:%d\t PC:%llx\n",inst_num, PC-4);
 #ifdef DEBUG
         {
         print_REG();
