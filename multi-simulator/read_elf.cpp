@@ -33,7 +33,7 @@ bool open_file()
     
     printf("Please input the file name:");
     cin >> FILENAME;
-    cout<<FILENAME<<endl;
+    //cout<<FILENAME<<endl;
 
     file=fopen(FILENAME,"r");
     elf=fopen("elf.txt","w");
